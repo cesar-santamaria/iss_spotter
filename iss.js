@@ -5,26 +5,66 @@ const fetchMyIP = function(callback) {
   // use request to fetch IP address from API.
   request(URL, function(error, response, body) {
     const IP = JSON.parse(body).ip;
-    const statusCode = JSON.parse(response.statusCode);
+    const statusCode = response.statusCode;
     if (error) {
       callback(error, null);
     }
     if (statusCode !== 200) {
-      const msg = `status code: ${statusCode} when fetching IP address: ${body}`
-      callback(msg, null)
+      const msg = `status code: ${statusCode} when fetching IP address: ${body}`;
+      callback(msg, null);
     }
-    console.log(`status code: ${statusCode}`);
     callback(null, IP);
   });
 };
 
-/* 
-There can be a situation where no error is sent by the request function, but there's still a problem in the response. We should always check the HTTP status code which comes back as part of the HTTP Response.
+const fetchCoordsByIP = function(IP, callback) {
+  const URL = `https://freegeoip.app/json/${IP}`;
 
-The response.statusCode indicates the HTTP response code, and we should check it for a 200.
+  request(URL, function(error, response, body) {
+    const statusCode = response.statusCode;
 
-Instruction
-Within the fetchMyIP function, add error handling logic for both scenarios.
-*/
+    if (error) {
+      callback(error, null);
+      return;
+    }
+    if (statusCode !== 200) {
+      const msg = `status code: ${statusCode} when fetching geo coordinates (longitude, latitude): ${body}`;
+      callback(msg, null);
+      return;
+    }
+    const { latitude, longitude } = JSON.parse(body);
+    callback(null, {latitude, longitude});
+  });
+};
 
-module.exports = { fetchMyIP };
+/**
+ * Makes a single API request to retrieve upcoming ISS fly over times the for the given lat/lng coordinates.
+ * Input:
+ *   - An object with keys `latitude` and `longitude`
+ *   - A callback (to pass back an error or the array of resulting data)
+ * Returns (via Callback):
+ *   - An error, if any (nullable)
+ *   - The fly over times as an array of objects (null if error). Example:
+ *     [ { risetime: 134564234, duration: 600 }, ... ]
+ */
+const fetchISSFlyOverTimes = function(coords, callback) {
+  const URL = `https://iss-pass.herokuapp.com/json/?lat=${coords.latitude}&lon=${coords.longitude}`;
+
+  request(URL, function(error, response, body) {
+    const statusCode = response.statusCode;
+
+    if (error) {
+      callback(error, null);
+      return;
+    }
+    if (statusCode !== 200) {
+      const msg = `status code: ${statusCode} when fetching geo coordinates (longitude, latitude): ${body}`;
+      callback(msg, null);
+      return;
+    }
+    const passes = JSON.parse(body).response;
+    callback(null, passes);
+  });
+};
+
+module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes };
