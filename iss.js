@@ -1,4 +1,5 @@
 const request = require('request'); //npm package that allows for easier HTTP requests.
+const IP = '66.115.147.85';
 
 const fetchMyIP = function(callback) {
   const URL = 'https://api.ipify.org/?format=json';
@@ -37,16 +38,6 @@ const fetchCoordsByIP = function(IP, callback) {
   });
 };
 
-/**
- * Makes a single API request to retrieve upcoming ISS fly over times the for the given lat/lng coordinates.
- * Input:
- *   - An object with keys `latitude` and `longitude`
- *   - A callback (to pass back an error or the array of resulting data)
- * Returns (via Callback):
- *   - An error, if any (nullable)
- *   - The fly over times as an array of objects (null if error). Example:
- *     [ { risetime: 134564234, duration: 600 }, ... ]
- */
 const fetchISSFlyOverTimes = function(coords, callback) {
   const URL = `https://iss-pass.herokuapp.com/json/?lat=${coords.latitude}&lon=${coords.longitude}`;
 
@@ -67,4 +58,26 @@ const fetchISSFlyOverTimes = function(coords, callback) {
   });
 };
 
-module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes };
+ const nextISSTimesForMyLocation = function(callback) {
+  // empty for now
+  fetchMyIP((error, ip) => {
+    if (error) {
+      return console.log("It didn't work!" , error);
+    }
+    fetchCoordsByIP(IP, (error, coordinates) => {
+      if (error) {
+        console.log("It didn't work!" , error);
+        return;
+      }
+      fetchISSFlyOverTimes(coordinates,(error, passTimes) => {
+        if (error) {
+          console.log("It didn't work!" , error);
+          return;
+        }
+        callback(null, passTimes);
+      });
+    });
+  });
+}
+
+module.exports = { nextISSTimesForMyLocation };
